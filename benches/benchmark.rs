@@ -24,5 +24,9 @@ fn all_benches(c: &mut Criterion) {
 }
 
 criterion_group!(days, day_benches);
-criterion_group!(all, all_benches);
+criterion_group! {
+    name = all;
+    config = Criterion::default().measurement_time(std::time::Duration::from_secs(15));
+    targets = all_benches
+}
 criterion_main!(days, all);
