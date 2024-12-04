@@ -31,7 +31,7 @@ fn run_days(days: Vec<&Day>) {
         days.into_iter()
             .map(|day| {
                 let (part1, duration1) = time_execution(|| day.part1());
-                let (part2, duration2) = time_execution(|| day.part1());
+                let (part2, duration2) = time_execution(|| day.part2());
                 return (day.name.as_str(), part1, part2, duration1, duration2);
             })
             .collect::<Vec<_>>()
