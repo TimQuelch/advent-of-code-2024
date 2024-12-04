@@ -5,14 +5,16 @@ use once_cell::sync::Lazy;
 type PartFn = fn(&str) -> i32;
 
 pub struct Day {
+    pub name: String,
     input: String,
     part1_impl: PartFn,
     part2_impl: PartFn,
 }
 
 impl Day {
-    fn new(filename: &str, part1: PartFn, part2: PartFn) -> Self {
+    fn new(name: &str, filename: &str, part1: PartFn, part2: PartFn) -> Self {
         Day {
+            name: name.to_string(),
             input: fs::read_to_string(filename).unwrap(),
             part1_impl: part1,
             part2_impl: part2,
@@ -41,7 +43,7 @@ macro_rules! make_days {
         {
             vec![
                 $(
-                    Day::new(concat!("data/", stringify!($day), ".txt"), $day::part1, $day::part2),
+                    Day::new(stringify!($day), concat!("data/", stringify!($day), ".txt"), $day::part1, $day::part2),
                 )*
             ]
         }
