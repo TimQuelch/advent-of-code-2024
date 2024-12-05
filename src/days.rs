@@ -33,7 +33,7 @@ impl Day {
 macro_rules! declare_modules {
     ($($day:ident),*) => {
         $(
-            mod $day;
+            pub mod $day;
         )*
     };
 }
