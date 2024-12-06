@@ -14,34 +14,48 @@ pub fn part1(input: &str) -> i32 {
         .sum();
 }
 
-pub fn part2(input: &str) -> i32 {
-    static RE: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"don't\(\)|do\(\)|mul\((\d+),(\d+)\)").unwrap());
+struct EnabledMulIterator<'a> {
+    input: &'a str,
+    offset: usize,
+}
 
-    RE.captures_iter(input)
-        .scan(true, |enabled, m| match m.get(0).unwrap().as_str() {
-            // don't
-            s if s.starts_with("don") => {
-                *enabled = false;
-                Some(None)
+impl<'a> EnabledMulIterator<'a> {
+    fn new(input: &'a str) -> Self {
+        EnabledMulIterator { input, offset: 0 }
+    }
+}
+
+impl Iterator for EnabledMulIterator<'_> {
+    type Item = (i32, i32);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        static MUL_OR_DONT_RE: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r"don't\(\)|mul\((\d+),(\d+)\)").unwrap());
+        static DO_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"do\(\)").unwrap());
+
+        loop {
+            match MUL_OR_DONT_RE.captures_at(self.input, self.offset) {
+                None => return None,
+                Some(x) if x.get(0).unwrap().as_str().starts_with("m") => {
+                    self.offset = x.get(0).unwrap().end();
+                    return Some((
+                        x.get(1).unwrap().as_str().parse::<i32>().unwrap(),
+                        x.get(2).unwrap().as_str().parse::<i32>().unwrap(),
+                    ));
+                }
+                Some(x) => match DO_RE.find_at(self.input, x.get(0).unwrap().end()) {
+                    None => return None,
+                    Some(next_do) => {
+                        self.offset = next_do.end();
+                    }
+                },
             }
-            // do
-            s if s.starts_with("d") => {
-                *enabled = true;
-                Some(None)
-            }
-            // mul
-            _ if *enabled => Some(Some(m)),
-            _ => Some(None),
-        })
-        .filter_map(|x| x)
-        .map(|m| {
-            m.iter()
-                .skip(1)
-                .map(|x| x.unwrap().as_str().parse::<i32>().unwrap())
-                .product::<i32>()
-        })
-        .sum()
+        }
+    }
+}
+
+pub fn part2(input: &str) -> i32 {
+    EnabledMulIterator::new(input).map(|(a, b)| a * b).sum()
 }
 
 #[cfg(test)]
