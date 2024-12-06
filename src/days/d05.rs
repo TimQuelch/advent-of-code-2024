@@ -1,19 +1,25 @@
 use std::{cmp::Ordering, collections::HashSet};
 
-fn build_compare(input: &str) -> impl Fn(&u8, &u8) -> Ordering {
-    let rules: HashSet<_> = input
+type RuleSet = HashSet<(u8, u8)>;
+
+fn build_rules(input: &str) -> RuleSet {
+    input
         .lines()
         .take_while(|line| !line.is_empty())
         .map(|l| {
             let mut iter = l.split('|').map(|n| n.parse::<u8>().unwrap());
             (iter.next().unwrap(), iter.next().unwrap())
         })
-        .collect();
+        .collect()
+}
 
+fn compare<'a>(rules: &'a RuleSet) -> impl Fn(&u8, &u8) -> Ordering + 'a {
+    // we assume that at most one of the orders of the values is present. This is valid if we assume
+    // there is no implicit orderings. With this assumption if the pair (a, b) is not present then
+    // it is implied that (b, a) must be present instead. We don't need to check for it explicitly.
     move |a: &u8, b: &u8| match (*a, *b) {
         p if rules.contains(&p) => Ordering::Less,
-        (a, b) if rules.contains(&(b, a)) => Ordering::Greater,
-        x => panic!("no rule for {:?}", x),
+        _ => Ordering::Greater,
     }
 }
 
@@ -29,17 +35,18 @@ fn update_iter(input: &str) -> impl Iterator<Item = &str> {
 }
 
 pub fn part1(input: &str) -> i32 {
-    let compare = build_compare(input);
+    let rules = build_rules(input);
+    let compare_fn = is_sorted_compare(compare(&rules));
+
+    let mut working_space: Vec<u8> = vec![];
 
     let result = update_iter(input)
         .filter_map(|l| {
-            let vals = l
-                .split(',')
-                .map(|n| n.parse::<u8>().unwrap())
-                .collect::<Vec<_>>();
+            working_space.clear();
+            working_space.extend(l.split(',').map(|n| n.parse::<u8>().unwrap()));
 
-            match vals.is_sorted_by(is_sorted_compare(&compare)) {
-                true => Some(vals.get(vals.len() / 2).unwrap().clone() as i32),
+            match working_space.is_sorted_by(&compare_fn) {
+                true => Some(working_space.get(working_space.len() / 2).unwrap().clone() as i32),
                 false => None,
             }
         })
@@ -49,20 +56,27 @@ pub fn part1(input: &str) -> i32 {
 }
 
 pub fn part2(input: &str) -> i32 {
-    let compare = build_compare(input);
+    let rules = build_rules(input);
+    let compare_fn = compare(&rules);
+    let is_sorted_compare_fn = is_sorted_compare(&compare_fn);
+
+    let mut working_space: Vec<u8> = vec![];
 
     let result = update_iter(input)
         .filter_map(|l| {
-            let mut vals = l
-                .split(',')
-                .map(|n| n.parse::<u8>().unwrap())
-                .collect::<Vec<_>>();
+            working_space.clear();
+            working_space.extend(l.split(',').map(|n| n.parse::<u8>().unwrap()));
 
-            let mid = vals.len() / 2;
+            let mid = working_space.len() / 2;
 
-            match vals.is_sorted_by(is_sorted_compare(&compare)) {
+            match working_space.is_sorted_by(&is_sorted_compare_fn) {
                 true => None,
-                false => Some(vals.select_nth_unstable_by(mid, &compare).1.clone() as i32),
+                false => Some(
+                    working_space
+                        .select_nth_unstable_by(mid, &compare_fn)
+                        .1
+                        .clone() as i32,
+                ),
             }
         })
         .sum();
