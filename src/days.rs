@@ -50,5 +50,5 @@ macro_rules! make_days {
     };
 }
 
-declare_modules!(d01, d02, d03, d04, d05);
-pub static DAYS: Lazy<Vec<Day>> = Lazy::new(|| make_days!(d01, d02, d03, d04, d05));
+declare_modules!(d01, d02, d03, d04, d05, d06);
+pub static DAYS: Lazy<Vec<Day>> = Lazy::new(|| make_days!(d01, d02, d03, d04, d05, d06));
