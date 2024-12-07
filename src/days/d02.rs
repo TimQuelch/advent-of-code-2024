@@ -18,7 +18,7 @@ where
     }
 }
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     return input
         .lines()
         .map(|l| l.split_whitespace().map(|n| n.parse::<i8>().unwrap()))
@@ -57,7 +57,7 @@ impl<'a, T> Iterator for TryRemovingEach<'a, T> {
     }
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &str) -> i64 {
     let mut working_space: Vec<i8> = vec![];
     return input
         .lines()

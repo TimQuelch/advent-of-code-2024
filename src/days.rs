@@ -2,7 +2,7 @@ use std::fs;
 
 use once_cell::sync::Lazy;
 
-type PartFn = fn(&str) -> i32;
+type PartFn = fn(&str) -> i64;
 
 pub struct Day {
     pub name: String,
@@ -21,11 +21,11 @@ impl Day {
         }
     }
 
-    pub fn part1(&self) -> i32 {
+    pub fn part1(&self) -> i64 {
         (self.part1_impl)(&self.input)
     }
 
-    pub fn part2(&self) -> i32 {
+    pub fn part2(&self) -> i64 {
         (self.part2_impl)(&self.input)
     }
 }

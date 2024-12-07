@@ -34,7 +34,7 @@ fn update_iter(input: &str) -> impl Iterator<Item = &str> {
     input.lines().skip_while(|line| !line.is_empty()).skip(1)
 }
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     let rules = build_rules(input);
     let compare_fn = is_sorted_compare(compare(&rules));
 
@@ -50,12 +50,12 @@ pub fn part1(input: &str) -> i32 {
                 false => None,
             }
         })
-        .sum();
+        .sum::<i32>();
 
-    return result;
+    return result.try_into().unwrap();
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &str) -> i64 {
     let rules = build_rules(input);
     let compare_fn = compare(&rules);
     let is_sorted_compare_fn = is_sorted_compare(&compare_fn);
@@ -79,9 +79,9 @@ pub fn part2(input: &str) -> i32 {
                 ),
             }
         })
-        .sum();
+        .sum::<i32>();
 
-    return result;
+    return result.try_into().unwrap();
 }
 
 #[cfg(test)]

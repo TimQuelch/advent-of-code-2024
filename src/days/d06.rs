@@ -81,7 +81,7 @@ fn next_dir(dir: Dir) -> Dir {
     }
 }
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     let (grid, mut pos) = build_grid(input);
     let mut dir = Dir::U;
     let mut visited = HashSet::new();
@@ -150,7 +150,7 @@ fn contains_any_direction(set: &HashSet<(Pos, Dir)>, pos: Pos) -> bool {
         || set.contains(&(pos, Dir::R))
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &str) -> i64 {
     let (grid, mut pos) = build_grid(input);
     let mut dir = Dir::U;
     let mut visited = HashSet::new();

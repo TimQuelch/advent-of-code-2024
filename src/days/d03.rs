@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"mul\((\d+),(\d+)\)").unwrap());
     return RE
         .captures_iter(input)
@@ -11,7 +11,9 @@ pub fn part1(input: &str) -> i32 {
                 .map(|d| d.unwrap().as_str().parse::<i32>().unwrap())
                 .product::<i32>()
         })
-        .sum();
+        .sum::<i32>()
+        .try_into()
+        .unwrap();
 }
 
 struct EnabledMulIterator<'a> {
@@ -54,8 +56,12 @@ impl Iterator for EnabledMulIterator<'_> {
     }
 }
 
-pub fn part2(input: &str) -> i32 {
-    EnabledMulIterator::new(input).map(|(a, b)| a * b).sum()
+pub fn part2(input: &str) -> i64 {
+    EnabledMulIterator::new(input)
+        .map(|(a, b)| a * b)
+        .sum::<i32>()
+        .try_into()
+        .unwrap()
 }
 
 #[cfg(test)]

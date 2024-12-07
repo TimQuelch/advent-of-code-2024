@@ -23,7 +23,7 @@ where
     }
 }
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     let mut list1 = BinaryHeap::new();
     let mut list2 = BinaryHeap::new();
 
@@ -35,10 +35,12 @@ pub fn part1(input: &str) -> i32 {
 
     return zip(PopIterator::new(list1), PopIterator::new(list2))
         .map(|(a, b)| (a - b).abs())
-        .sum();
+        .sum::<i32>()
+        .try_into()
+        .unwrap();
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &str) -> i64 {
     let mut map: HashMap<i32, (i32, i32)> = HashMap::new();
 
     input.lines().for_each(|l| {
@@ -53,7 +55,12 @@ pub fn part2(input: &str) -> i32 {
             .or_insert((0, 1));
     });
 
-    return map.drain().map(|(x, (y, z))| x * y * z).sum();
+    return map
+        .drain()
+        .map(|(x, (y, z))| x * y * z)
+        .sum::<i32>()
+        .try_into()
+        .unwrap();
 }
 
 #[cfg(test)]

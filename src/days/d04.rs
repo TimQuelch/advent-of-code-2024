@@ -38,7 +38,7 @@ where
     iter.clone().eq(P1_MATCH.into_iter()) || iter.eq(P1_REV_MATCH.into_iter())
 }
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     let grid = build_grid(input);
 
     let horizontal = grid
@@ -77,7 +77,7 @@ where
     iter.clone().eq(P2_MATCH.into_iter()) || iter.eq(P2_REV_MATCH.into_iter())
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &str) -> i64 {
     let grid = build_grid(input);
 
     grid.windows((3, 3))
