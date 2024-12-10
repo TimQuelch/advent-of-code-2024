@@ -1,8 +1,8 @@
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> i64 {
     return 0
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &str) -> i64 {
     return 0
 }
 
