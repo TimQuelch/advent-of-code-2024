@@ -1,134 +1,134 @@
-use std::{
-    collections::{linked_list, LinkedList},
-    iter,
-};
-
 use itertools::Itertools;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum Data {
-    File(u16),
-    Free,
-}
-
-struct ChunkBySizes<GI, II> {
-    gaps: GI,
-    source: II,
-}
-
-impl<GI, II> Iterator for ChunkBySizes<GI, II>
-where
-    GI: Iterator<Item = u8>,
-    II: Iterator<Item = u64> + Clone,
-{
-    type Item = iter::Take<II>;
-    fn next(&mut self) -> Option<Self::Item> {
-        let size = self.gaps.next().expect("ran out of gaps before files");
-        let ret = self.source.clone().take(size as usize);
-        if size > 0 {
-            self.source.nth(size as usize - 1);
-        }
-        Some(ret)
-    }
+struct Block {
+    offset: u32,
+    size: u8,
 }
 
 pub fn part1(input: &str) -> i64 {
-    let all = input
+    let offsets = input
         .bytes()
         .filter_map(|c| match c {
             x if x >= b'0' && x <= b'9' => Some(c - b'0'),
             _ => None,
         })
-        .collect::<Vec<_>>();
-
-    let final_length: u64 = all.iter().step_by(2).map(|x| *x as u64).sum();
-
-    let files = all
-        .iter()
-        .step_by(2)
-        .cloned()
-        .enumerate()
-        .map(|(id, size)| iter::repeat_n(id as u64, size as usize));
-
-    let files_rev = files.clone().rev().flatten();
-
-    let gaps = all.iter().skip(1).step_by(2).cloned();
-
-    let result = files
-        .zip(ChunkBySizes {
-            gaps,
-            source: files_rev,
+        .scan(0_u32, |i, size| {
+            let offset = *i;
+            *i += size as u32;
+            Some(Block { offset, size })
         })
-        .flat_map(|(f, g)| f.clone().chain(g))
-        .take(final_length as usize)
-        .enumerate()
-        .map(|(i, v)| i as u64 * v)
-        .sum::<u64>();
+        .collect_vec();
+
+    let final_length: u32 = offsets.iter().step_by(2).map(|b| b.size as u32).sum();
+
+    let mut files = offsets.iter().cloned().step_by(2).enumerate().collect_vec();
+
+    let mut new_files = vec![];
+    let mut old_files = files.iter_mut().rev().peekable();
+    let mut gaps = offsets.iter().skip(1).step_by(2).cloned();
+
+    while let Some(mut gap) = gaps.next() {
+        if gap.offset > final_length {
+            break;
+        }
+        while gap.size > 0 {
+            let last_file = old_files.peek_mut().unwrap();
+            match last_file.1.size {
+                s if s > gap.size => {
+                    new_files.push((
+                        last_file.0,
+                        Block {
+                            offset: gap.offset,
+                            size: gap.size,
+                        },
+                    ));
+                    last_file.1.size -= gap.size;
+                    gap.size = 0;
+                }
+                _ => {
+                    let popped = old_files.next().unwrap();
+                    new_files.push((
+                        popped.0,
+                        Block {
+                            offset: gap.offset,
+                            size: popped.1.size,
+                        },
+                    ));
+                    gap.offset += popped.1.size as u32;
+                    gap.size -= popped.1.size;
+                    popped.1.size = 0;
+                }
+            }
+        }
+    }
+
+    let result: u64 = files
+        .into_iter()
+        .chain(new_files.into_iter())
+        .map(|(id, b)| {
+            let n = b.offset as u64;
+            let m = n + b.size as u64;
+            id as u64 * (n..m).sum::<u64>()
+        })
+        .sum();
+
     return result.try_into().unwrap();
 }
 
 pub fn part2(input: &str) -> i64 {
-    let mut fs = input
+    let mut files = vec![];
+    let mut gaps = vec![];
+
+    input
         .bytes()
         .filter_map(|c| match c {
             x if x >= b'0' && x <= b'9' => Some(c - b'0'),
             _ => None,
         })
+        .scan(0_u32, |i, size| {
+            let offset = *i;
+            *i += size as u32;
+            Some(Block { offset, size })
+        })
         .enumerate()
-        .map(|(i, size)| match i % 2 {
-            0 => (Data::File((i / 2) as u16), size),
-            _ => (Data::Free, size),
-        })
-        .collect::<Vec<_>>();
-
-    let last_id = fs
-        .iter()
-        .rev()
-        .find_map(|b| match b.0 {
-            Data::File(x) => Some(x),
-            _ => None,
-        })
-        .unwrap();
-
-    for id in (1..(last_id + 1)).rev() {
-        let (pos, &(d, size)) = fs
-            .iter()
-            .rev()
-            .find_position(|&&b| b.0 == Data::File(id))
-            .expect("couldn't find the position that was requested");
-
-        let fpos = fs.len() - pos - 1;
-        match fs
-            .iter_mut()
-            .find_position(|b| b.0 == Data::Free && b.1 >= size)
-        {
-            Some((gpos, gap)) if gap.1 == size && gpos < fpos => fs.swap(fpos, gpos),
-            Some((gpos, gap)) if gpos < fpos => {
-                gap.1 -= size;
-                *(fs.get_mut(fpos).unwrap()) = (Data::Free, size);
-                fs.insert(gpos, (d, size));
+        .for_each(|(i, b)| {
+            if i % 2 == 0 {
+                files.push(b)
+            } else if b.size > 0 {
+                gaps.push(b)
             }
-            _ => {}
-        };
+        });
 
-        while fs.last().map_or(false, |(d, _)| *d == Data::Free) {
-            fs.pop();
+    for (i, f) in files.iter_mut().rev().enumerate() {
+        // Gaps after the current file can never be used
+        while gaps.last().map_or(false, |g| g.offset > f.offset) {
+            gaps.pop();
         }
+
+        // Every now and then we clean up all the gaps which have size 0
+        if i % 150 == 0 {
+            gaps.retain(|&g| g.size > 0)
+        }
+
+        gaps.iter_mut().find(|g| g.size >= f.size).map(|gap| {
+            f.offset = gap.offset;
+            gap.offset += f.size as u32;
+            gap.size -= f.size;
+        });
     }
 
-    let result = fs
+    let result: u64 = files
         .into_iter()
-        .scan(0_u64, |i, (d, size)| {
-            let vals = match d {
-                Data::File(id) => (*i..*i + (size as u64)).sum::<u64>() * id as u64,
-                Data::Free => 0,
-            };
-            *i += size as u64;
-            Some(vals)
+        .enumerate()
+        .map(|(id, b)| {
+            let n = b.offset as u64;
+            let m = n + b.size as u64;
+            id as u64 * (n..m).sum::<u64>()
         })
-        .sum::<u64>();
+        .sum();
 
-    return result.try_into().unwrap();
+    result.try_into().unwrap()
 }
 
 #[cfg(test)]
