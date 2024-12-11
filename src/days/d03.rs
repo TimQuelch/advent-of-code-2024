@@ -1,8 +1,8 @@
-use once_cell::sync::Lazy;
 use regex::Regex;
+use std::sync::LazyLock;
 
 pub fn part1(input: &str) -> i64 {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"mul\((\d+),(\d+)\)").unwrap());
+    static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"mul\((\d+),(\d+)\)").unwrap());
     return RE
         .captures_iter(input)
         .map(|m| {
@@ -31,9 +31,9 @@ impl Iterator for EnabledMulIterator<'_> {
     type Item = (i32, i32);
 
     fn next(&mut self) -> Option<Self::Item> {
-        static MUL_OR_DONT_RE: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"don't\(\)|mul\((\d+),(\d+)\)").unwrap());
-        static DO_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"do\(\)").unwrap());
+        static MUL_OR_DONT_RE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r"don't\(\)|mul\((\d+),(\d+)\)").unwrap());
+        static DO_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"do\(\)").unwrap());
 
         loop {
             match MUL_OR_DONT_RE.captures_at(self.input, self.offset) {

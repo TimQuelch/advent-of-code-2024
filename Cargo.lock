@@ -9,7 +9,6 @@ dependencies = [
  "criterion",
  "itertools 0.13.0",
  "ndarray",
- "once_cell",
  "petgraph",
  "regex",
 ]
