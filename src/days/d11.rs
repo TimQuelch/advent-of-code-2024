@@ -1,58 +1,35 @@
-use std::{cell::RefCell, collections::HashMap};
+use cached::{proc_macro::cached, Cached};
 
-fn trim_zeros(s: &str) -> &str {
-    match s.trim_start_matches('0') {
-        "" => "0",
-        trimmed => trimmed,
-    }
-}
-
-thread_local! {
-    static COUNT_STONES_LOOKUP: RefCell<HashMap<(u32, u8), u32>> = RefCell::new(HashMap::new());
-}
-
-fn lookup_cache(s: u32, d: u8) -> Option<u32> {
-    COUNT_STONES_LOOKUP.with_borrow(|lookup| lookup.get(&(s, d)).map(|c| *c))
-}
-
-fn set_cache(s: u32, d: u8, result: u32) {
-    COUNT_STONES_LOOKUP.with_borrow_mut(|lookup| lookup.insert((s, d), result));
-}
-
-fn clear_cache() {
-    COUNT_STONES_LOOKUP.with_borrow_mut(|lookup| lookup.clear());
-}
-
-fn count_stones(s: &str, depth: u8) -> u32 {
-    let parsed = s.parse().unwrap();
-    if let Some(cached) = lookup_cache(parsed, depth) {
-        return cached;
-    }
-
+#[cached]
+fn count_stones(s: u64, depth: u8) -> u64 {
     if depth == 0 {
         return 1;
     }
-    let result = match s {
-        "0" => count_stones("1", depth - 1),
-        x if x.len() % 2 == 0 => {
-            let (a, b) = s.split_at(s.len() / 2);
-            count_stones(a, depth - 1) + count_stones(trim_zeros(b), depth - 1)
-        }
-        _ => count_stones(&(parsed * 2024).to_string(), depth - 1),
-    };
 
-    set_cache(parsed, depth, result);
+    if s == 0 {
+        return count_stones(1, depth - 1);
+    }
 
-    result
+    // Calculate ceil rounded log 10 to get the number of digits. Add 0.1 to ensure that exact
+    // powers of 10 round up to the next one.
+    let log_s = (s as f64 + 0.1).log10().ceil() as u32;
+    if log_s != 0 && log_s % 2 == 0 {
+        let split_factor = 10_u64.pow(log_s / 2);
+        return count_stones(s / split_factor, depth - 1)
+            + count_stones(s % split_factor, depth - 1);
+    }
+
+    return count_stones(s * 2024, depth - 1);
 }
 
 fn solve(input: &str, depth: u8) -> i64 {
-    clear_cache();
+    // Clear the cache each time so we have fair timings
+    COUNT_STONES.lock().unwrap().cache_clear();
 
     let res = input
         .split_whitespace()
-        .map(|s| count_stones(s, depth))
-        .sum::<u32>()
+        .map(|s| count_stones(s.parse().unwrap(), depth))
+        .sum::<u64>()
         .try_into()
         .unwrap();
 
