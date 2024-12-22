@@ -1,6 +1,6 @@
 use std::{
     cmp::{Ord, Ordering, PartialOrd},
-    collections::{BinaryHeap, HashSet},
+    collections::{BinaryHeap, HashMap, HashSet},
     hash::Hash,
     ops::Add,
 };
@@ -93,40 +93,41 @@ pub trait Cost: Default + Copy + Eq + PartialEq + Ord + Add<Output = Self> {}
 
 impl<T: Default + Copy + Eq + PartialEq + Ord + Add<Output = Self>> Cost for T {}
 
-pub struct WithCost<T, C: Cost> {
+#[derive(Clone, Copy)]
+pub struct WithHeuristicCost<T, C: Cost> {
     node: T,
     cost: C,
     heuristic: C,
 }
 
-impl<T, C: Cost> WithCost<T, C> {
+impl<T, C: Cost> WithHeuristicCost<T, C> {
     fn total(&self) -> C {
         self.cost + self.heuristic
     }
 }
 
-impl<T, C: Cost> PartialEq for WithCost<T, C> {
+impl<T, C: Cost> PartialEq for WithHeuristicCost<T, C> {
     fn eq(&self, other: &Self) -> bool {
         self.total() == other.total()
     }
 }
 
-impl<T, C: Cost> Eq for WithCost<T, C> {}
+impl<T, C: Cost> Eq for WithHeuristicCost<T, C> {}
 
-impl<T, C: Cost> Ord for WithCost<T, C> {
+impl<T, C: Cost> Ord for WithHeuristicCost<T, C> {
     fn cmp(&self, other: &Self) -> Ordering {
         other.total().cmp(&self.total())
     }
 }
 
-impl<T, C: Cost> PartialOrd for WithCost<T, C> {
+impl<T, C: Cost> PartialOrd for WithHeuristicCost<T, C> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 pub struct AstarWorkingSpace<T, C: Cost> {
-    queue: BinaryHeap<WithCost<T, C>>,
+    queue: BinaryHeap<WithHeuristicCost<T, C>>,
     visited: HashSet<T>,
 }
 
@@ -139,9 +140,9 @@ impl<T, C: Cost> AstarWorkingSpace<T, C> {
     }
 }
 
-pub fn astar<T, C: Cost, FN, I, FH>(
+pub fn astar<T, C: Cost, FE, FN, I, FH>(
     s: T,
-    e: T,
+    is_end: FE,
     neighbours: FN,
     heuristic: FH,
     ws: &mut AstarWorkingSpace<T, C>,
@@ -152,18 +153,19 @@ where
     FN: Fn(T) -> I,
     I: Iterator<Item = (T, C)>,
     FH: Fn(T) -> C,
+    FE: Fn(T) -> bool,
 {
     ws.queue.clear();
     ws.visited.clear();
 
-    ws.queue.push(WithCost {
+    ws.queue.push(WithHeuristicCost {
         node: s,
         cost: Default::default(),
         heuristic: heuristic(s),
     });
 
     while let Some(current) = ws.queue.pop() {
-        if current.node == e {
+        if is_end(current.node) {
             return Some(current.cost);
         }
 
@@ -178,7 +180,7 @@ where
                 continue;
             }
 
-            ws.queue.push(WithCost {
+            ws.queue.push(WithHeuristicCost {
                 node: next,
                 cost: current.cost + edge_weight,
                 heuristic: heuristic(next),
@@ -187,4 +189,80 @@ where
     }
 
     None
+}
+
+#[derive(Clone, Copy)]
+pub struct WithCost<T, C: Cost> {
+    node: T,
+    cost: C,
+}
+
+impl<T, C: Cost> PartialEq for WithCost<T, C> {
+    fn eq(&self, other: &Self) -> bool {
+        self.cost == other.cost
+    }
+}
+
+impl<T, C: Cost> Eq for WithCost<T, C> {}
+
+impl<T, C: Cost> Ord for WithCost<T, C> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.cost.cmp(&self.cost)
+    }
+}
+
+impl<T, C: Cost> PartialOrd for WithCost<T, C> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+pub struct DijkstraWorkingSpace<T, C: Cost> {
+    queue: BinaryHeap<WithCost<T, C>>,
+}
+
+impl<T, C: Cost> DijkstraWorkingSpace<T, C> {
+    pub fn new() -> Self {
+        Self {
+            queue: BinaryHeap::new(),
+        }
+    }
+}
+
+pub fn dijkstra_cost_map<T, C: Cost, FN, I>(
+    s: T,
+    neighbours: FN,
+    ws: &mut DijkstraWorkingSpace<T, C>,
+    map_size: usize
+) -> HashMap<T, C>
+where
+    T: Copy + Eq + Hash,
+    C: Cost,
+    FN: Fn(T) -> I,
+    I: Iterator<Item = (T, C)>,
+{
+    ws.queue.clear();
+
+    ws.queue.push(WithCost {
+        node: s,
+        cost: Default::default(),
+    });
+
+    let mut cost_map = HashMap::with_capacity(map_size);
+
+    while let Some(current) = ws.queue.pop() {
+        for (next, edge_weight) in neighbours(current.node) {
+            let cost = current.cost + edge_weight;
+
+            match cost_map.get(&next) {
+                Some(&c) if c <= cost => (),
+                _ => {
+                    cost_map.insert(next, cost);
+                    ws.queue.push(WithCost { node: next, cost })
+                }
+            }
+        }
+    }
+
+    cost_map
 }

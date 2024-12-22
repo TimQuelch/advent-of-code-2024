@@ -41,7 +41,7 @@ fn solve_p1(input: &str, size: (usize, usize), n: usize) -> i64 {
 
     let result = utils::astar(
         s,
-        e,
+        |p| p == e,
         |p| neighbours(p, size, &walls).map(|n| (n, 1)),
         |p| {
             ((e.0 as i64 - p.0 as i64).unsigned_abs() + (e.1 as i64 - p.1 as i64).unsigned_abs())
@@ -75,7 +75,7 @@ fn solve_p2(input: &str, size: (usize, usize)) -> (usize, usize) {
 
             utils::astar(
                 s,
-                e,
+                |p| p == e,
                 |p| neighbours(p, size, &walls).map(|n| (n, 1)),
                 |p| {
                     ((e.0 as i64 - p.0 as i64).unsigned_abs()
