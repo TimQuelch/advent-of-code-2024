@@ -2,12 +2,14 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
+#[derive(Debug, PartialEq, Eq)]
 enum GateType {
     And,
     Or,
     Xor,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 struct Gate<'a> {
     gate_type: GateType,
     in1: &'a str,
@@ -95,8 +97,99 @@ pub fn part1(input: &str) -> i64 {
     result.try_into().unwrap()
 }
 
-pub fn part2(input: &str) -> i64 {
-    return 0;
+pub fn part2<'a>(input: &'a str) -> i64 {
+    // Full adder
+    // 1. (X,  Y) XOR -> A
+    // 2. (X,  Y) AND -> B
+    // 3. (A, CI) XOR -> Z
+    // 4. (A, CI) AND -> C
+    // 5. (C,  B)  OR -> CO
+
+    let gates = input
+        .split_once("\n\n")
+        .unwrap()
+        .1
+        .lines()
+        .map(|g| {
+            let mut iter = g.split(' ');
+            let in1 = iter.next().unwrap();
+            let gate_type_raw = iter.next().unwrap();
+            let in2 = iter.next().unwrap();
+            let out = iter.nth(1).unwrap();
+
+            let gate_type = match gate_type_raw {
+                "AND" => GateType::And,
+                "OR" => GateType::Or,
+                "XOR" => GateType::Xor,
+                _ => panic!("invalid gate type {}", gate_type_raw),
+            };
+
+            (gate_type, in1, in2, out)
+        })
+        .collect::<Vec<_>>();
+
+    let find_by_in = |input: &'a str| {
+        gates
+            .iter()
+            .filter(move |(_, in1, in2, _)| *in1 == input || *in2 == input)
+    };
+
+    let broken = gates
+        .iter()
+        .filter_map(|(ty, in1, in2, out)| {
+            // If the gate is an XOR then either its inputs are x?? and y?? or the output is z??. If
+            // it is not a z?? output then the outputs must be an XOR and an AND gate
+            if *ty == GateType::Xor && !out.starts_with('z') {
+                if !((in1.starts_with('x') && in2.starts_with('y'))
+                    || (in1.starts_with('y') && in2.starts_with('x')))
+                {
+                    return Some(out);
+                }
+
+                let mut out_gates = find_by_in(out).map(|(ty, _, _, _)| ty);
+                let gates = out_gates.next().zip(out_gates.next());
+                if gates.map_or(true, |(a, b)| {
+                    *a == *b
+                        || !(*a == GateType::Xor || *a == GateType::And)
+                        || !(*b == GateType::Xor || *b == GateType::And)
+                }) {
+                    return Some(out);
+                }
+            }
+
+            // If the gate is an AND then the output must be a single OR gate.
+            // The exception is the LSB
+            if *ty == GateType::And && (*in1 != "x00" && *in2 != "x00") {
+                let mut out_gates = find_by_in(out).map(|(ty, _, _, _)| ty);
+                if !(out_gates.next().map_or(false, |ty| *ty == GateType::Or)
+                    && out_gates.next().is_none())
+                {
+                    return Some(out);
+                }
+            }
+
+            // If the gate is an OR then the output must be a XOR gate and a AND gate.
+            // The exception is the MSB
+            if *ty == GateType::Or && *out != "z45" {
+                let mut out_gates = find_by_in(out).map(|(ty, _, _, _)| ty);
+                let gates = out_gates.next().zip(out_gates.next());
+                if gates.map_or(true, |(a, b)| {
+                    *a == *b
+                        || !(*a == GateType::Xor || *a == GateType::And)
+                        || !(*b == GateType::Xor || *b == GateType::And)
+                }) {
+                    return Some(out);
+                }
+            }
+
+            None
+        })
+        .sorted()
+        .join(",");
+
+    println!("{}", broken);
+
+    broken.len().try_into().unwrap()
 }
 
 #[cfg(test)]
@@ -176,11 +269,5 @@ tnw OR pbm -> gnj
     fn example_part1_2() {
         let result = part1(EXAMPLE2.trim());
         assert_eq!(result, 2024)
-    }
-
-    #[test]
-    fn example_part2() {
-        let result = part2(EXAMPLE.trim());
-        assert_eq!(result, 0)
     }
 }
