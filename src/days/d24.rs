@@ -2,12 +2,14 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
+#[derive(Debug, PartialEq, Eq)]
 enum GateType {
     And,
     Or,
     Xor,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 struct Gate<'a> {
     gate_type: GateType,
     in1: &'a str,
@@ -96,6 +98,50 @@ pub fn part1(input: &str) -> i64 {
 }
 
 pub fn part2(input: &str) -> i64 {
+    let (_, gates) = parse(input);
+
+    let zkeys = gates.keys().filter(|g| g.starts_with('z')).cloned().sorted().collect::<Vec<_>>();
+
+    // Assume the first bit is correct. (X, Y) XOR -> Z, the carry for this bit is (X, Y) AND -> CO
+    assert_eq!(*gates.get(zkeys[0]).unwrap(), Gate { gate_type: GateType::Xor, in1: "y00", in2: "x00" });
+
+    // Full adder
+    // (X,  Y) XOR -> A
+    // (X,  Y)  OR -> B
+    // (A, CI) XOR -> Z
+    // (A, CI)  OR -> C
+    // (C,  B) AND -> CO
+
+    for &zk in zkeys[1..].iter() {
+        let top = gates.get(zk).unwrap();
+        // In my input one half of each pair was swapped with a top level xor
+        if top.gate_type != GateType::Xor {
+            println!("top level of {} is not xor: {:?}", zk, top);
+
+            if (top.gate_type == GateType::And) {
+                println!("top level of {} is an and: {:?}", zk, top);
+            }
+
+        }
+    }
+
+
+    dbg!(gates.get("z00"));
+    dbg!(gates.get("z01"));
+    dbg!(gates.get("rvp"));
+    dbg!(gates.get("tss"));
+
+    dbg!(gates.get("z02"));
+    dbg!(gates.get("tdp"));
+    dbg!(gates.get("bcr"));
+    dbg!(gates.get("jcr"));
+    dbg!(gates.get("ccn"));
+
+
+
+    // dbg!(gates.get("z02"));
+    // dbg!(gates.get("z03"));
+
     return 0;
 }
 
