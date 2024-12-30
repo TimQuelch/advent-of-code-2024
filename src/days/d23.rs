@@ -11,12 +11,6 @@ fn str_to_key(s: &str) -> u16 {
     (a << 8) | b
 }
 
-fn key_to_str(x: u16) -> String {
-    let a = (x >> 8) as u8;
-    let b = (x % (1 << 8)) as u8;
-    str::from_utf8(&[a, b]).unwrap().to_owned()
-}
-
 fn key_starts_with_t(n: u16) -> bool {
     (n >> 8) as u8 == b't'
 }
@@ -98,12 +92,19 @@ fn solve_p2(input: &str) -> Vec<u16> {
 pub fn part2(input: &str) -> i64 {
     let result = solve_p2(input);
 
-    let x = result
-        .iter()
-        .map(|&x| key_to_str(x))
-        .collect::<Vec<_>>()
-        .join(",");
-    println!("{}", x);
+    // Uncomment to print the required answer
+
+    // fn key_to_str(x: u16) -> String {
+    //     let a = (x >> 8) as u8;
+    //     let b = (x % (1 << 8)) as u8;
+    //     str::from_utf8(&[a, b]).unwrap().to_owned()
+    // }
+    // let x = result
+    //     .iter()
+    //     .map(|&x| key_to_str(x))
+    //     .collect::<Vec<_>>()
+    //     .join(",");
+    // println!("{}", x);
 
     // Convert into a numeric result for my interfaces
     return result

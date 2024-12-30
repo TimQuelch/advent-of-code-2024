@@ -187,8 +187,10 @@ pub fn part2<'a>(input: &'a str) -> i64 {
         .sorted()
         .join(",");
 
-    println!("{}", broken);
+    // Uncomment to print the required answer
+    // println!("{}", broken);
 
+    // Return a numeric answer for the templates
     broken.len().try_into().unwrap()
 }
 

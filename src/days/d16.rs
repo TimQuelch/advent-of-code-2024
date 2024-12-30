@@ -149,7 +149,6 @@ pub fn part2(input: &str) -> i64 {
         .find(|((p, _), c)| *p == end && **c == lowest_end_cost)
         .unwrap();
     let reversed_dir = (d.0 * -1, d.1 * -1);
-    // println!("\n\nreversing!");
 
     let reverse_costs = utils::dijkstra_cost_map(
         (end, reversed_dir),
@@ -157,26 +156,6 @@ pub fn part2(input: &str) -> i64 {
         &mut working_space,
         forward_costs.len()
     );
-
-    println!("forward costs {}", forward_costs.len());
-    println!("reverse costs {}", reverse_costs.len());
-
-    // println!("end cost {:?}", forward_costs.get(&(end, (0, 1))));
-    // println!("end cost {:?}", forward_costs.get(&(end, (0, -1))));
-    // println!("end cost {:?}", forward_costs.get(&(end, (1, 0))));
-    // println!("end cost {:?}", forward_costs.get(&(end, (-1, 0))));
-    // println!("start cost {:?}", forward_costs.get(&(start, (0, 1))));
-    // println!("start cost {:?}", forward_costs.get(&(start, (0, -1))));
-    // println!("start cost {:?}", forward_costs.get(&(start, (1, 0))));
-    // println!("start cost {:?}", forward_costs.get(&(start, (-1, 0))));
-    // println!("end cost {:?}", reverse_costs.get(&(end, (0, 1))));
-    // println!("end cost {:?}", reverse_costs.get(&(end, (0, -1))));
-    // println!("end cost {:?}", reverse_costs.get(&(end, (1, 0))));
-    // println!("end cost {:?}", reverse_costs.get(&(end, (-1, 0))));
-    // println!("start cost {:?}", reverse_costs.get(&(start, (0, 1))));
-    // println!("start cost {:?}", reverse_costs.get(&(start, (0, -1))));
-    // println!("start cost {:?}", reverse_costs.get(&(start, (1, 0))));
-    // println!("start cost {:?}", reverse_costs.get(&(start, (-1, 0))));
 
     let count = grid
         .indexed_iter()
